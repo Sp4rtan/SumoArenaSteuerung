@@ -76,21 +76,10 @@ unsigned long
 //BUTTONS---------------------------------------------------------------------------------------------
 bool[] buttonStates = new bool[3];
 bool[] buttonFlanks = new bool[3];
+long[] buttonActivation = new bool[3];
 
 byte
   debounceDelay = 20;                             // time to wait for button change
-/*
-bool 
-  button01_oldState = HIGH,                       // button debounce variable
-  button02_oldState = HIGH,                       // button debounce variable
-  button03_oldState = HIGH;                       // button debounce variable
-
-
-bool
-  button01 = false,                               // Initial button states
-  button02 = false,                               //
-  button03 = false;                               //
-  */
 //--------------------------------------------------------------------------------------------
 
 //FUNCTIONS-----------------------------------------------------------------------------------------------------------------------
@@ -147,15 +136,9 @@ void setup() {
   //analogReference(EXTERNAL);
   //analogReference(INTERNAL);
 
-  show_at_max_brightness_for_power();                                   //FastLED.show();
-}
+  //show_at_max_brightness_for_power();                                   //FastLED.show();
 
-void ColorWipe() {
-  
-}
-
-void loop() {
-  while (brightness < 255 && startSequence == true){
+  while (brightness < 255){
     thisMillisFade=millis();
     if(thisMillisFade - prevMillisFade >= intervalFade){
         brightness++;
@@ -165,7 +148,13 @@ void loop() {
         prevMillisFade = thisMillisFade;
     }
   }
-  startSequence = false;
+}
+
+void ColorWipe() {
+  
+}
+
+void loop() {
   
   ReadInput();
   InterpretInput();
@@ -175,7 +164,7 @@ void loop() {
     case STANDBY:                                               // Fill whole strip with color
       ColorFlow();
 
-      if (button01) {
+      if (buttonStates[0]) {
         currentMode = START;
       }
     break;
@@ -191,7 +180,7 @@ void loop() {
     case FIGHT:                                               // Fill whole strip with color
       rainbow();
 
-      if (button01) {
+      if (buttonStates[0]) {
         currentMode = FINISH;
       }
     break;
@@ -208,24 +197,7 @@ void loop() {
       }
     break;
   }
-  
-//  if(!COUNTDOWN && !failure){
-//    thisMillisFade=millis();
-//    if(thisMillisFade - prevMillisFade >= intervalFade){
-//      if(brightness < 255)
-//        brightness++;
-//      prevMillisFade = thisMillisFade;
-//    }
-//    //rainbow();
-//    CylonDual();
-//    //ColorFlow();
-//  }
-//  else if(COUNTDOWN && !failure){
-//    Start();
-//  }
-//  else
-//    Fail();
-//    
+
   FastLED.setBrightness(brightness);
   show_at_max_brightness_for_power();   
 }
@@ -345,64 +317,30 @@ void Finish(){
 }
 
 void ReadInput(){
-
-  bool button01_newState = digitalRead(BTN01_PIN);
-  bool button02_newState = digitalRead(BTN02_PIN);
-  bool button03_newState = digitalRead(BTN03_PIN);
-//BUTTON 01------------------------------------------------------------------  
-  // Check if state changed from high to low (button press).
-  if (button01_newState == LOW && button01_oldState == HIGH) {
-    // Short delay to debounce button.
-    delay(debounceDelay);
-    // Check if button is still low after debounce.
-    button01_newState = digitalRead(BTN01_PIN);
-    if (button01_newState == LOW)
-      button01 = true;
-  }
-  else
-    button01 = false;
-   
-  // Set the last button state to the old state.
-  button01_oldState = button01_newState;
-//---------------------------------------------------------------------------  
-  
-//BUTTON 02------------------------------------------------------------------   
-  // Check if state changed from high to low (button press).
-  if (button02_newState == LOW && button02_oldState == HIGH) {
-    // Short delay to debounce button.
-    delay(debounceDelay);
-    // Check if button is still low after debounce.
-    button02_newState = digitalRead(BTN02_PIN);
-    if (button02_newState == LOW)
-      button02 = true;
-  }
-  else
-    button02 = false;
-    
-  // Set the last button state to the old state.
-  button02_oldState = button02_newState;
-//---------------------------------------------------------------------------    
-
-//BUTTON 03------------------------------------------------------------------    
-  // Check if state changed from high to low (button press).
-  if (button03_newState == LOW && button03_oldState == HIGH) {
-    // Short delay to debounce button.
-    delay(debounceDelay);
-    // Check if button is still low after debounce.
-    button03_newState = digitalRead(BTN03_PIN);
-    if (button03_newState == LOW)
-      button03 = true;
-  }
-  else
-    button03 = false;
-    
-  // Set the last button state to the old state.
-  button03_oldState = button03_newState;
-//---------------------------------------------------------------------------    
+  debounceButton(0, BTN01_PIN);
+  debounceButton(1, BTN02_PIN);
+  debounceButton(2, BTN03_PIN);
 }
 
-bool debounceButton(int buttonNum) {
+void debounceButton(int buttonNum, int pinNum) {
+  bool currentButtonState = digitalRead(pinNum);
   
+  button[buttonNum] = false;
+  
+  if (!currentButtonState) {
+    if  (buttonStates[buttonNum] ) {
+      if (&& (buttonActivation[buttonNum] == 0)) {
+        buttonActivation[buttonNum] = millis();
+      } else if (millis() - buttonActivation[buttonNum] > debounceDelay) {
+        button[buttonNum] = true;
+        buttonActivation[buttonNum] = 0;
+      }
+    } 
+  } else {
+    buttonActivation[buttonNum] = 0;
+  }
+
+  buttonStates[buttonNum] = currentButtonState;
 }
 
 void InterpretInput(){
