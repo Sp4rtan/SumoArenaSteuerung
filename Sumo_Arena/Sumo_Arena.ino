@@ -32,10 +32,10 @@ CRGB pixelColor;
 //---------------------------------------------------------------------------------------------
 
 // Pillar Control------------------------------------------------------------------------------
-#define ENDSTOP1  A0       // Enstop Unten                      //CHRISTIAN
-#define ENDSTOP2  A1       // Endstop Oben                    //CHRISTIAN     
-#define Motor1    7       // Motor hoch                       //CHRISTIAN
-#define Motro2    8       // Motor runter                     //CHRISTIAN
+#define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
+#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
+#define Motor1    A0       // Motor hoch                       //CHRISTIAN
+#define Motro2    A1       // Motor runter                     //CHRISTIAN
                           
 //---------------------------------------------------------------------------------------------
 
@@ -74,18 +74,23 @@ unsigned long
 //---------------------------------------------------------------------------------------------
 
 //BUTTONS---------------------------------------------------------------------------------------------
+bool[] buttonStates = new bool[3];
+bool[] buttonFlanks = new bool[3];
+
+byte
+  debounceDelay = 20;                             // time to wait for button change
+/*
 bool 
   button01_oldState = HIGH,                       // button debounce variable
   button02_oldState = HIGH,                       // button debounce variable
   button03_oldState = HIGH;                       // button debounce variable
 
-byte
-  debounceDelay = 20;                             // time to wait for button change
 
 bool
   button01 = false,                               // Initial button states
   button02 = false,                               //
   button03 = false;                               //
+  */
 //--------------------------------------------------------------------------------------------
 
 //FUNCTIONS-----------------------------------------------------------------------------------------------------------------------
@@ -394,6 +399,10 @@ void ReadInput(){
   // Set the last button state to the old state.
   button03_oldState = button03_newState;
 //---------------------------------------------------------------------------    
+}
+
+bool debounceButton(int buttonNum) {
+  
 }
 
 void InterpretInput(){
