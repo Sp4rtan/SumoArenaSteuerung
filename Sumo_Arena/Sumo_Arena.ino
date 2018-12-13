@@ -32,10 +32,10 @@ CRGB pixelColor;
 //---------------------------------------------------------------------------------------------
 
 // Pillar Control------------------------------------------------------------------------------
-#define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
-#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
-#define Motor1    A0       // Motor hoch                       //CHRISTIAN
-#define Motro2    A1       // Motor runter                     //CHRISTIAN
+#define ENDSTOP1  A0       // Enstop Unten                      //CHRISTIAN
+#define ENDSTOP2  A1       // Endstop Oben                    //CHRISTIAN     
+#define Motor1    7       // Motor hoch                       //CHRISTIAN
+#define Motro2    8       // Motor runter                     //CHRISTIAN
                           
 //---------------------------------------------------------------------------------------------
 
