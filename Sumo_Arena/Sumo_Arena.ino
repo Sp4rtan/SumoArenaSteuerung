@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include <power_mgt.h>
 #include <pixeltypes.h>
+#include <limits.h>
 
 #define RGBORDER RGB
 
@@ -130,6 +131,10 @@ byte fadeColor = 1;
 
 
 void setup() {
+  for (int i = 0; i < 5; i++) {
+    buttonActivation[i] = 0;
+  }
+  
   FastLED.addLeds<WS2812B, DATA_PIN, RGBORDER>(leds, NUM_LEDS);
 
   set_max_power_in_volts_and_milliamps(5, 19000);                        //(U in v, I in mA)                             /* CHANGEABLE */
@@ -153,6 +158,7 @@ void setup() {
         prevMillisFade = thisMillisFade;
     }
   }
+  Serial.println("finished setup");
 }
 
 void ColorWipe() {
@@ -160,7 +166,8 @@ void ColorWipe() {
 }
 
 void loop() {
-  
+  Serial.print("currentMode: ");
+  Serial.println(currentMode);
   ReadInput();
   InterpretInput();
 
@@ -169,7 +176,7 @@ void loop() {
     case STANDBY:                                               // Fill whole strip with color
       ColorFlow();
 
-      if (buttonStates[0]) {
+      if (buttonFlanks[0]) {
         currentMode = START;
       }
     break;
@@ -185,7 +192,7 @@ void loop() {
     case FIGHT:                                               // Fill whole strip with color
       rainbow();
 
-      if (buttonStates[0]) {
+      if (buttonFlanks[0]) {
         currentMode = FINISH;
       }
     break;
@@ -332,24 +339,42 @@ void ReadInput(){
 }
 
 void debounceButton(int buttonNum, int pinNum) {
-  bool currentButtonState = digitalRead(pinNum);
-  
-  buttonFlanks[buttonNum] = false;
-  
-  if (!(currentButtonState)) {
-    if  (buttonStates[buttonNum]) {
-      if ((buttonActivation[buttonNum] == 0)) {
-        buttonActivation[buttonNum] = millis();
-      } else if (millis() - buttonActivation[buttonNum] > debounceDelay) {
+  if (buttonNum == 0) {
+    bool currentButtonState = digitalRead(pinNum);
+    Serial.print("currentButtonState: ");
+    Serial.println(currentButtonState);
+    Serial.print("buttonStates: ");
+    Serial.println(buttonStates[0]);
+    
+    buttonFlanks[buttonNum] = false;
+    if (buttonFlanks[buttonNum]) {
+      buttonFlanks[buttonNum] = false;
+      buttonActivation[buttonNum] = 0;
+    }
+    if (!(currentButtonState)) {
+      if  (buttonStates[buttonNum] && (buttonActivation[buttonNum] == 0)) {
+          buttonActivation[buttonNum] = millis();
+          Serial.println("SEETT");
+      } 
+      
+      long long waited = millis() - buttonActivation[buttonNum];
+      Serial.print("waited");
+      Serial.println((long)waited);
+      Serial.print("activation");
+      Serial.println(buttonActivation[buttonNum]);
+      Serial.print("millis");
+      Serial.println(millis());
+      if (waited > debounceDelay && waited < debounceDelay * 2) {
         buttonFlanks[buttonNum] = true;
         buttonActivation[buttonNum] = 0;
       }
-    } 
-  } else {
-    buttonActivation[buttonNum] = 0;
+    } else {
+      buttonActivation[buttonNum] = 0;
+    }
+    Serial.print("buttonFlanks: ");
+    Serial.println(buttonFlanks[0]);
+    buttonStates[buttonNum] = currentButtonState;
   }
-
-  buttonStates[buttonNum] = currentButtonState;
 }
 
 void InterpretInput(){
