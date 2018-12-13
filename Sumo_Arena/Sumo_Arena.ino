@@ -72,6 +72,8 @@ unsigned long
   bool flash = false,
       strobe = false;
   int start_stage = 1; // Zustaende waehrend der Startanimation
+
+  byte fadeSpeed = 8;
 //---------------------------------------------------------------------------------------------
 
 //BUTTONS---------------------------------------------------------------------------------------------
@@ -175,7 +177,7 @@ void loop() {
   switch(currentMode){
     case STANDBY:                                               // Fill whole strip with color
       ColorFlow();
-
+      //CylonDual();
       if (buttonFlanks[0]) {
         currentMode = START;
       }
@@ -190,7 +192,7 @@ void loop() {
       }
     break;
     case FIGHT:                                               // Fill whole strip with color
-      rainbow();
+      Pulse();
 
       if (buttonFlanks[0]) {
         currentMode = FINISH;
@@ -270,6 +272,10 @@ void Flash(){
   }
 }
 
+void Pulse(){
+  pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
+  fill_solid( leds, NUM_LEDS, pixelColor);
+}
 void Start(){
   if(start_stage == 1){
     thisMillisRED=millis();
@@ -302,7 +308,7 @@ void Start(){
     thisMillisBLACK=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Black);
     if(thisMillisBLACK - prevMillisBLACK >= intervalBLACK){
-      brightness = 0;
+      //brightness = 0;
       start_stage = 1;
       COUNTDOWN = false;
     }
@@ -316,7 +322,7 @@ void Fail(){
   thisMillisFAIL=millis();
   Flash();
   if(thisMillisFAIL - prevMillisFAIL >= intervalFAIL){
-    brightness = 0;
+    //brightness = 0;
     failure = false;
   }
 }
@@ -325,7 +331,7 @@ void Finish(){
   thisMillisFAIL=millis();
   Flash();
   if(thisMillisFAIL - prevMillisFAIL >= intervalFAIL){
-    brightness = 0;
+    //brightness = 0;
     finish = false;
   }
 }
