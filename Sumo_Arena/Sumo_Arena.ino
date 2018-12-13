@@ -96,7 +96,7 @@ void InterpretInput();
 //--------------------------------------------------------------------------------------------------------------------------------
 
 //Arena Modus
-enum arenaMode {STANDBY=1,START, FIGHT, CANCEL, FINISH};
+enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH};
 arenaMode currentMode = STANDBY;
 
 //CYLON DUAL MODE-------------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ void loop() {
       Start();
 
       if (button01) {
-        currentMode = CANCEL;
+        currentMode = STOPPING;
       }
       if (!COUNTDOWN) { 
         currentMode = FIGHT;
@@ -191,7 +191,7 @@ void loop() {
         currentMode = FINISH;
       }
     break;
-    case CANCEL:                                               // Fill whole strip with color
+    case STOPPING:                                               // Fill whole strip with color
       Fail();
       if (!failure) {
         currentMode = STANDBY;
