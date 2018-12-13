@@ -35,7 +35,7 @@ CRGB pixelColor;
 #define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
 #define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
 #define Motor1    A0       // Motor hoch                       //CHRISTIAN
-#define Motro2    A1       // Motor runter                     //CHRISTIAN
+#define Motor2    A1       // Motor runter                     //CHRISTIAN
                           
 //---------------------------------------------------------------------------------------------
 
@@ -74,9 +74,13 @@ unsigned long
 //---------------------------------------------------------------------------------------------
 
 //BUTTONS---------------------------------------------------------------------------------------------
-bool[] buttonStates = new bool[3];
-bool[] buttonFlanks = new bool[3];
-long[] buttonActivation = new bool[3];
+bool buttonStates[5];
+bool buttonFlanks[5];
+long buttonActivation[5];
+
+bool
+  goUp = false,
+  goDown = false;
 
 byte
   debounceDelay = 20;                             // time to wait for button change
@@ -86,6 +90,7 @@ byte
 //--------------------------------------------------------------------------------------------------------------------------------
 void ReadInput();
 void InterpretInput();
+void moveObstacle();
 
 //--------------------------------------------------------------------------------------------------------------------------------
 
@@ -197,6 +202,8 @@ void loop() {
       }
     break;
   }
+
+  moveObstacle();
 
   FastLED.setBrightness(brightness);
   show_at_max_brightness_for_power();   
@@ -320,19 +327,21 @@ void ReadInput(){
   debounceButton(0, BTN01_PIN);
   debounceButton(1, BTN02_PIN);
   debounceButton(2, BTN03_PIN);
+  debounceButton(3, ENDSTOP1);
+  debounceButton(4, ENDSTOP2);
 }
 
 void debounceButton(int buttonNum, int pinNum) {
   bool currentButtonState = digitalRead(pinNum);
   
-  button[buttonNum] = false;
+  buttonFlanks[buttonNum] = false;
   
-  if (!currentButtonState) {
-    if  (buttonStates[buttonNum] ) {
-      if (&& (buttonActivation[buttonNum] == 0)) {
+  if (!(currentButtonState)) {
+    if  (buttonStates[buttonNum]) {
+      if ((buttonActivation[buttonNum] == 0)) {
         buttonActivation[buttonNum] = millis();
       } else if (millis() - buttonActivation[buttonNum] > debounceDelay) {
-        button[buttonNum] = true;
+        buttonFlanks[buttonNum] = true;
         buttonActivation[buttonNum] = 0;
       }
     } 
@@ -344,7 +353,7 @@ void debounceButton(int buttonNum, int pinNum) {
 }
 
 void InterpretInput(){
-  if(button01 == true){
+  if(buttonFlanks[0]){
     if(start_stage == 1 && !COUNTDOWN){
      prevMillisRED = millis();
      COUNTDOWN = true;
@@ -356,11 +365,28 @@ void InterpretInput(){
       prevMillisFAIL = millis();
     }
   }
-  if(button02 == true){
-    
+  if(buttonFlanks[1]){
+    goUp = true;
   }
 
-  if(button03 == true){
-   
+  if(buttonFlanks[2]){
+    goDown = true;
+  }
+}
+
+void moveObstacle() {
+  if (buttonFlanks[3]) {
+    goUp = false;
+  }
+  if (buttonFlanks[4]) {
+    goDown = false;
+  }
+
+  if (goUp) {
+    digitalWrite(Motor1, HIGH);
+    digitalWrite(Motor2, LOW);
+  } else if (goDown) {
+    digitalWrite(Motor1, LOW);
+    digitalWrite(Motor2, HIGH);
   }
 }
