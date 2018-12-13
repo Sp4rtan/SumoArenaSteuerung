@@ -70,7 +70,7 @@ unsigned long
 
   bool flash = false,
       strobe = false;
-  int stage = 1;
+  int start_stage = 1; // Zustaende waehrend der Startanimation
 //---------------------------------------------------------------------------------------------
 
 //BUTTONS---------------------------------------------------------------------------------------------
@@ -177,15 +177,14 @@ void loop() {
     case START:                                               // Fill whole strip with color
       Start();
 
-      if (button01) {
+      if (failure) {
         currentMode = STOPPING;
-      }
-      if (!COUNTDOWN) { 
+      } else if (!COUNTDOWN) { 
         currentMode = FIGHT;
       }
     break;
     case FIGHT:                                               // Fill whole strip with color
-      ColorFlow();
+      rainbow();
 
       if (button01) {
         currentMode = FINISH;
@@ -227,11 +226,11 @@ void loop() {
 }
 void ColorFlow(){
   thisMillis=millis();
-      if(thisMillis - prevMillisFlow >= intervalFlow){
-        pixelColor = CHSV(fadeColor++, 255, 255);
-        fill_solid( leds, NUM_LEDS, pixelColor);
-        prevMillisFlow = thisMillis;
-      }
+  if(thisMillis - prevMillisFlow >= intervalFlow){
+    pixelColor = CHSV(fadeColor++, 255, 255);
+    fill_solid( leds, NUM_LEDS, pixelColor);
+    prevMillisFlow = thisMillis;
+  }
 }
       
 void CylonDual(){
@@ -281,39 +280,39 @@ void Flash(){
 }
 
 void Start(){
-  if(stage == 1){
+  if(start_stage == 1){
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
-      stage=2;
+      start_stage=2;
       prevMillisRED = thisMillisRED;
     }
   }
 
-  if(stage == 2){
+  if(start_stage == 2){
     Strobe();
     if(count > 3){
       count = 0;
-      stage=3;
+      start_stage=3;
       prevMillisGREEN = millis();
     }
   }
   
-  if(stage == 3){
+  if(start_stage == 3){
     thisMillisGREEN=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Green);
     if(thisMillisGREEN - prevMillisGREEN >= intervalGREEN){
-      stage=4;
+      start_stage=4;
       prevMillisBLACK = millis();
     }
   }
 
-  if(stage == 4){
+  if(start_stage == 4){
     thisMillisBLACK=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Black);
     if(thisMillisBLACK - prevMillisBLACK >= intervalBLACK){
       brightness = 0;
-      stage = 1;
+      start_stage = 1;
       COUNTDOWN = false;
     }
   }
@@ -399,13 +398,13 @@ void ReadInput(){
 
 void InterpretInput(){
   if(button01 == true){
-    if(stage == 1 && !COUNTDOWN){
+    if(start_stage == 1 && !COUNTDOWN){
      prevMillisRED = millis();
      COUNTDOWN = true;
     }else{
       Serial.print("FAIL!");
       COUNTDOWN = false;
-      stage = 1;
+      start_stage = 1;
       failure = true;
       prevMillisFAIL = millis();
     }
