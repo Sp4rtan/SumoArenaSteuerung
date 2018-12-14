@@ -149,7 +149,7 @@ void setup() {
   //analogReference(INTERNAL);
 
   //show_at_max_brightness_for_power();                                   //FastLED.show();
-
+  Serial.println("start");
   while (brightness < 255){
     thisMillisFade=millis();
     if(thisMillisFade - prevMillisFade >= intervalFade){
@@ -245,7 +245,7 @@ void Strobe(){
   thisMillis=millis();
   if(thisMillis - prevMillisSTROBE >= intervalSTROBE){
     if(strobe == true){                                                                          // strobe interval
-      fill_solid( leds, NUM_LEDS, CRGB::Yellow);       
+      fill_solid( leds, NUM_LEDS, CRGB::Orange);       
       strobe = !strobe;
       count++;
     }
@@ -388,7 +388,7 @@ void InterpretInput(){
     if(start_stage == 1 && !COUNTDOWN){
      prevMillisRED = millis();
      COUNTDOWN = true;
-    }else{
+    }else if (currentMode == START ) {
       Serial.print("FAIL!");
       COUNTDOWN = false;
       start_stage = 1;
