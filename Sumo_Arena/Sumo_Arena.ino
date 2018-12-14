@@ -131,7 +131,7 @@ long  intervalGREEN = 2000,
       flashPause = 50,
       intervalFade = 10,
       intervalFAIL = 3000,
-      intervalBEACON = 100;
+      intervalBEACON = 90;
 
 byte fadeColor = 1;
 
@@ -142,7 +142,8 @@ void setup() {
   }
   
   FastLED.addLeds<WS2812B, DATA_PIN, RGBORDER>(leds, NUM_LEDS);
-
+  FastLED.addLeds<WS2812B, DATA_PIN2, RGBORDER>(leds2, NUM_LEDS2);
+  
   set_max_power_in_volts_and_milliamps(5, 19000);                        //(U in v, I in mA)                             /* CHANGEABLE */
 
   pinMode(BTN01_PIN, INPUT_PULLUP);
@@ -159,12 +160,18 @@ void setup() {
     if(thisMillisFade - prevMillisFade >= intervalFade){
         brightness++;
         fill_solid( leds, NUM_LEDS, CRGB::Red);
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red);
         FastLED.setBrightness(brightness);
         show_at_max_brightness_for_power();
         prevMillisFade = thisMillisFade;
     }
   }
   Serial.println("finished setup");
+
+//  fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+//  leds2[0] = CRGB::Orange;
+//  leds2[4] = CRGB::Orange;
+  
 }
 
 void ColorWipe() {
@@ -172,7 +179,6 @@ void ColorWipe() {
 }
 
 void loop() {
-  Beacon();
   Serial.print("currentMode: ");
   Serial.println(currentMode);
   ReadInput();
@@ -430,13 +436,23 @@ void moveObstacle() {
 void Beacon(){
   thisMillis=millis();
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
-    fadeToBlackBy(leds2, NUM_LEDS, 0);       // dimm whole strip
-    fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);  
+    fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+    /*CRGB leds2_temp[NUM_LEDS2];
+    for (int i = 1; i < NUM_LEDS2; i++) {
+      leds2_temp[i] = leds2[i-1];
+    }
+    leds2_temp[0] = leds2[NUM_LEDS2-1];
+    for (int i = 0; i < NUM_LEDS2; i++) {
+      leds2[i] = leds2_temp[i];
+    }*/
+    //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+    fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
+    //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
     pixelPos++;
 
     prevMillisBEACON = thisMillis;
     
-    if(pixelPos > NUM_LEDS2)
+    if(pixelPos >= NUM_LEDS2)
       pixelPos = 0;
   }
 }
