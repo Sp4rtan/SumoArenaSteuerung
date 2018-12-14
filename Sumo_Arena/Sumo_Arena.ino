@@ -132,7 +132,7 @@ long  intervalGREEN = 2000,
       flashPause = 50,
       intervalFade = 10,
       intervalFAIL = 3000,
-      intervalBEACON = 100,
+      intervalBEACON = 90,
       interval_fight_start_green = 500;
 
 byte fadeColor = 1;
