@@ -277,7 +277,28 @@ void Pulse(){
   fill_solid( leds, NUM_LEDS, pixelColor);
 }
 void Start(){
+  /*
+   *   if(buttonFlanks[0]){
+    }else if (currentMode == START ) {
+    }
+  }
+   */
+
+  //Dont fail afer stage 2, thats the green stage
+  if (COUNTDOWN && buttonFlanks[0] && start_stage < 3) {  
+    Serial.print("FAIL!");
+    COUNTDOWN = false;
+    start_stage = 1;
+    failure = true;
+    prevMillisFAIL = millis();
+  }
+
   if(start_stage == 1){
+    if (!COUNTDOWN) {
+        prevMillisRED = millis();
+        COUNTDOWN = true;
+    }
+
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
@@ -384,18 +405,6 @@ void debounceButton(int buttonNum, int pinNum) {
 }
 
 void InterpretInput(){
-  if(buttonFlanks[0]){
-    if(start_stage == 1 && !COUNTDOWN){
-     prevMillisRED = millis();
-     COUNTDOWN = true;
-    }else if (currentMode == START ) {
-      Serial.print("FAIL!");
-      COUNTDOWN = false;
-      start_stage = 1;
-      failure = true;
-      prevMillisFAIL = millis();
-    }
-  }
   if(buttonFlanks[1]){
     goUp = true;
   }
