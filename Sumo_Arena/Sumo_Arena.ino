@@ -24,7 +24,7 @@
 
 // LED Anzahl
 #define NUM_LEDS  300        // Pixel Count Arena
-#define NUM_LEDS2 50         // Pixel Count Pillar
+#define NUM_LEDS2 8         // Pixel Count Pillar
 
 //NEO PIXELS-----------------------------------------------------------------------------------
 CRGB leds[NUM_LEDS];
@@ -67,11 +67,14 @@ unsigned long
   prevMillisSTROBE = 0,
 
   thisMillisFAIL = 0,
-  prevMillisFAIL = 0;
+  prevMillisFAIL = 0,
+
+  prevMillisBEACON = 0;
 
   bool flash = false,
       strobe = false;
   int start_stage = 1; // Zustaende waehrend der Startanimation
+  int pixelPos = 0;
 
   byte fadeSpeed = 8;
 //---------------------------------------------------------------------------------------------
@@ -127,7 +130,8 @@ long  intervalGREEN = 2000,
       prevMillisFlow = 0,
       flashPause = 50,
       intervalFade = 10,
-      intervalFAIL = 3000;
+      intervalFAIL = 3000,
+      intervalBEACON = 100;
 
 byte fadeColor = 1;
 
@@ -168,6 +172,7 @@ void ColorWipe() {
 }
 
 void loop() {
+  Beacon();
   Serial.print("currentMode: ");
   Serial.println(currentMode);
   ReadInput();
@@ -428,5 +433,19 @@ void moveObstacle() {
   } else if (goDown) {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, HIGH);
+  }
+}
+
+void Beacon(){
+  thisMillis=millis();
+  if(thisMillis - prevMillisBEACON >= intervalBEACON){
+    fadeToBlackBy(leds2, NUM_LEDS, 0);       // dimm whole strip
+    fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);  
+    pixelPos++;
+
+    prevMillisBEACON = thisMillis;
+    
+    if(pixelPos > NUM_LEDS2)
+      pixelPos = 0;
   }
 }
