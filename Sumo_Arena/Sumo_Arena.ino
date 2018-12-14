@@ -235,6 +235,7 @@ void ColorFlow(){
   if(thisMillis - prevMillisFlow >= intervalFlow){
     pixelColor = CHSV(fadeColor++, 255, 255);
     fill_solid( leds, NUM_LEDS, pixelColor);
+    fill_solid( leds2, NUM_LEDS2, pixelColor);
     prevMillisFlow = thisMillis;
   }
 }
@@ -242,7 +243,9 @@ void ColorFlow(){
 void CylonDual(){
   fadeToBlackBy(leds, NUM_LEDS, cylonTails);       // dimm whole strip
   fill_solid(&(leds[beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
+  fill_solid(&(leds2[beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
   fill_solid(&(leds[(NUM_LEDS-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
+  fill_solid(&(leds2[(NUM_LEDS2-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
 }
 
 void rainbow(){
@@ -252,18 +255,21 @@ void rainbow(){
       prevMillisRainbow = thisMillis;
     }
   fill_rainbow(leds, NUM_LEDS, fadeColor);
+  fill_rainbow(leds2, NUM_LEDS2, fadeColor);
 }
 
 void Strobe(){
   thisMillis=millis();
   if(thisMillis - prevMillisSTROBE >= intervalSTROBE){
     if(strobe == true){                                                                          // strobe interval
-      fill_solid( leds, NUM_LEDS, CRGB::Orange);       
+      fill_solid( leds, NUM_LEDS, CRGB::Orange);   
+      fill_solid( leds2, NUM_LEDS2, CRGB::Orange);       
       strobe = !strobe;
       count++;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
+      fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       strobe = !strobe;
     }    
     prevMillisSTROBE = thisMillis;
@@ -274,11 +280,13 @@ void Flash(){
   thisMillis=millis();
   if(thisMillis - prevMillisFLASH >= intervalFLASH){
     if(flash == true){                                                                          // strobe interval
-      fill_solid( leds, NUM_LEDS, CRGB::Red);       
+      fill_solid( leds, NUM_LEDS, CRGB::Red);
+      fill_solid( leds2, NUM_LEDS2, CRGB::Red);       
       flash = !flash;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
+      fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       flash = !flash;
     }    
     prevMillisFLASH = thisMillis;
@@ -288,9 +296,11 @@ void Flash(){
 void Pulse(){
   if (millis() - fight_green_start < interval_fight_start_green) {
      fill_solid( leds, NUM_LEDS, CRGB::Green);
+     fill_solid( leds2, NUM_LEDS2, CRGB::Green);
   } else {
     pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
     fill_solid( leds, NUM_LEDS, pixelColor);
+    fill_solid( leds2, NUM_LEDS2, pixelColor);
   }
 }
 void Start(){
@@ -318,6 +328,7 @@ void Start(){
 
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
+    fill_solid( leds2, NUM_LEDS2, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
       start_stage=2;
       prevMillisRED = thisMillisRED;
