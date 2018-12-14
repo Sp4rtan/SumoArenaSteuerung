@@ -69,7 +69,8 @@ unsigned long
   thisMillisFAIL = 0,
   prevMillisFAIL = 0,
 
-  prevMillisBEACON = 0;
+  prevMillisBEACON = 0,
+  fight_green_start = 0;
 
   bool flash = false,
       strobe = false;
@@ -131,7 +132,8 @@ long  intervalGREEN = 2000,
       flashPause = 50,
       intervalFade = 10,
       intervalFAIL = 3000,
-      intervalBEACON = 90;
+      intervalBEACON = 100,
+      interval_fight_start_green = 500;
 
 byte fadeColor = 1;
 
@@ -179,8 +181,7 @@ void ColorWipe() {
 }
 
 void loop() {
-  Serial.print("currentMode: ");
-  Serial.println(currentMode);
+  Beacon();
   ReadInput();
   InterpretInput();
 
@@ -200,6 +201,7 @@ void loop() {
         currentMode = STOPPING;
       } else if (!COUNTDOWN) { 
         currentMode = FIGHT;
+        fight_green_start = millis();
       }
     break;
     case FIGHT:                                               // Fill whole strip with color
@@ -284,11 +286,36 @@ void Flash(){
 }
 
 void Pulse(){
-  pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
-  fill_solid( leds, NUM_LEDS, pixelColor);
+  if (millis() - fight_green_start < interval_fight_start_green) {
+     fill_solid( leds, NUM_LEDS, CRGB::Green);
+  } else {
+    pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
+    fill_solid( leds, NUM_LEDS, pixelColor);
+  }
 }
 void Start(){
+  /*
+   *   if(buttonFlanks[0]){
+    }else if (currentMode == START ) {
+    }
+  }
+   */
+
+  //Dont fail afer stage 2, thats the green stage
+  if (COUNTDOWN && buttonFlanks[0]) {  
+    Serial.print("FAIL!");
+    COUNTDOWN = false;
+    start_stage = 1;
+    failure = true;
+    prevMillisFAIL = millis();
+  }
+
   if(start_stage == 1){
+    if (!COUNTDOWN) {
+        prevMillisRED = millis();
+        COUNTDOWN = true;
+    }
+
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
@@ -300,33 +327,13 @@ void Start(){
   if(start_stage == 2){
     Strobe();
     if(count > 3){
+      Serial.println("FIGHT!");
       count = 0;
-      start_stage=3;
+      start_stage = 1;
+      COUNTDOWN = false;
       prevMillisGREEN = millis();
     }
   }
-  
-  if(start_stage == 3){
-    thisMillisGREEN=millis();
-    fill_solid( leds, NUM_LEDS, CRGB::Green);
-    if(thisMillisGREEN - prevMillisGREEN >= intervalGREEN){
-      start_stage=4;
-      prevMillisBLACK = millis();
-    }
-  }
-
-  if(start_stage == 4){
-    thisMillisBLACK=millis();
-    fill_solid( leds, NUM_LEDS, CRGB::Black);
-    if(thisMillisBLACK - prevMillisBLACK >= intervalBLACK){
-      //brightness = 0;
-      start_stage = 1;
-      COUNTDOWN = false;
-    }
-  }
-
-  
-
 }
 
 void Fail(){
@@ -358,10 +365,6 @@ void ReadInput(){
 void debounceButton(int buttonNum, int pinNum) {
   if (buttonNum == 0) {
     bool currentButtonState = digitalRead(pinNum);
-    Serial.print("currentButtonState: ");
-    Serial.println(currentButtonState);
-    Serial.print("buttonStates: ");
-    Serial.println(buttonStates[0]);
     
     buttonFlanks[buttonNum] = false;
     if (buttonFlanks[buttonNum]) {
@@ -371,16 +374,9 @@ void debounceButton(int buttonNum, int pinNum) {
     if (!(currentButtonState)) {
       if  (buttonStates[buttonNum] && (buttonActivation[buttonNum] == 0)) {
           buttonActivation[buttonNum] = millis();
-          Serial.println("SEETT");
       } 
       
       long long waited = millis() - buttonActivation[buttonNum];
-      Serial.print("waited");
-      Serial.println((long)waited);
-      Serial.print("activation");
-      Serial.println(buttonActivation[buttonNum]);
-      Serial.print("millis");
-      Serial.println(millis());
       if (waited > debounceDelay && waited < debounceDelay * 2) {
         buttonFlanks[buttonNum] = true;
         buttonActivation[buttonNum] = 0;
@@ -388,25 +384,11 @@ void debounceButton(int buttonNum, int pinNum) {
     } else {
       buttonActivation[buttonNum] = 0;
     }
-    Serial.print("buttonFlanks: ");
-    Serial.println(buttonFlanks[0]);
     buttonStates[buttonNum] = currentButtonState;
   }
 }
 
 void InterpretInput(){
-  if(buttonFlanks[0]){
-    if(start_stage == 1 && !COUNTDOWN){
-     prevMillisRED = millis();
-     COUNTDOWN = true;
-    }else if (currentMode == START ) {
-      Serial.print("FAIL!");
-      COUNTDOWN = false;
-      start_stage = 1;
-      failure = true;
-      prevMillisFAIL = millis();
-    }
-  }
   if(buttonFlanks[1]){
     goUp = true;
   }
