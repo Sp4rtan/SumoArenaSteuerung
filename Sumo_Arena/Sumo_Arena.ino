@@ -172,10 +172,6 @@ void setup() {
     }
   }
   Serial.println("finished setup");
-
-//  fill_solid( leds2, NUM_LEDS2, CRGB::Black);
-//  leds2[0] = CRGB::Orange;
-//  leds2[4] = CRGB::Orange;
   
 }
 
@@ -186,6 +182,11 @@ void ColorWipe() {
 void loop() {
   ReadInput();
   InterpretInput();
+
+  Serial.print("GoUP: ");
+  Serial.print(goUp);
+  Serial.print("  |  GoDown: ");
+  Serial.println(goDown);
 
   //Aktueller Arena-Modus
   switch(currentMode){
