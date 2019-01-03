@@ -238,12 +238,15 @@ void ColorFlow(){
   if(thisMillis - prevMillisFlow >= intervalFlow){
     pixelColor = CHSV(fadeColor++, 255, 255);
     fill_solid( leds, NUM_LEDS, pixelColor);
+<<<<<<< HEAD
     if(goUp || goDown){
       Beacon();
     }
     else{
       fill_solid( leds2, NUM_LEDS2, pixelColor);
     }
+=======
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
     prevMillisFlow = thisMillis;
   }
 }
@@ -260,7 +263,10 @@ void CylonDual(){
   }
   fill_solid(&(leds[beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
   fill_solid(&(leds[(NUM_LEDS-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
+<<<<<<< HEAD
   
+=======
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
 }
 
 void rainbow(){
@@ -270,18 +276,22 @@ void rainbow(){
       prevMillisRainbow = thisMillis;
     }
   fill_rainbow(leds, NUM_LEDS, fadeColor);
+<<<<<<< HEAD
   if(goUp || goDown){
       Beacon();
   }
   else{
     fill_rainbow(leds2, NUM_LEDS2, fadeColor);
   }
+=======
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
 }
 
 void Strobe(){
   thisMillis=millis();
   if(thisMillis - prevMillisSTROBE >= intervalSTROBE){
     if(strobe == true){                                                                          // strobe interval
+<<<<<<< HEAD
       fill_solid( leds, NUM_LEDS, CRGB::Orange);
       if(goUp || goDown){
         Beacon();
@@ -289,17 +299,23 @@ void Strobe(){
       else{   
         fill_solid( leds2, NUM_LEDS2, CRGB::Orange);      
       } 
+=======
+      fill_solid( leds, NUM_LEDS, CRGB::Orange);       
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
       strobe = !strobe;
       count++;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
+<<<<<<< HEAD
       if(goUp || goDown){
         Beacon();
       }
       else{
         fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       }
+=======
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
       strobe = !strobe;
     }    
     prevMillisSTROBE = thisMillis;
@@ -310,6 +326,7 @@ void Flash(){
   thisMillis=millis();
   if(thisMillis - prevMillisFLASH >= intervalFLASH){
     if(flash == true){                                                                          // strobe interval
+<<<<<<< HEAD
       fill_solid( leds, NUM_LEDS, CRGB::Red);
       if(goUp || goDown){
         Beacon();
@@ -317,16 +334,22 @@ void Flash(){
       else{
         fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
       }      
+=======
+      fill_solid( leds, NUM_LEDS, CRGB::Red);       
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
       flash = !flash;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
+<<<<<<< HEAD
       if(goUp || goDown){
         Beacon();
       }
       else{
         fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       }
+=======
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
       flash = !flash;
     }    
     prevMillisFLASH = thisMillis;
@@ -336,6 +359,7 @@ void Flash(){
 void Pulse(){
   if (millis() - fight_green_start < interval_fight_start_green) {
      fill_solid( leds, NUM_LEDS, CRGB::Green);
+<<<<<<< HEAD
      if(goUp || goDown){
       Beacon();
      }
@@ -351,6 +375,11 @@ void Pulse(){
     else{
       fill_solid( leds2, NUM_LEDS2, pixelColor);
     }
+=======
+  } else {
+    pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
+    fill_solid( leds, NUM_LEDS, pixelColor);
+>>>>>>> parent of 3da2400... Update Sumo_Arena.ino
   }
 }
 void Start(){
@@ -378,7 +407,6 @@ void Start(){
 
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
-    fill_solid( leds2, NUM_LEDS2, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
       start_stage=2;
       prevMillisRED = thisMillisRED;
