@@ -181,7 +181,6 @@ void ColorWipe() {
 }
 
 void loop() {
-  Beacon();
   ReadInput();
   InterpretInput();
 
@@ -407,9 +406,11 @@ void moveObstacle() {
   }
 
   if (goUp) {
+    Beacon();
     digitalWrite(Motor1, HIGH);
     digitalWrite(Motor2, LOW);
   } else if (goDown) {
+    Beacon();
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, HIGH);
   }
@@ -419,14 +420,6 @@ void Beacon(){
   thisMillis=millis();
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
     fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
-    /*CRGB leds2_temp[NUM_LEDS2];
-    for (int i = 1; i < NUM_LEDS2; i++) {
-      leds2_temp[i] = leds2[i-1];
-    }
-    leds2_temp[0] = leds2[NUM_LEDS2-1];
-    for (int i = 0; i < NUM_LEDS2; i++) {
-      leds2[i] = leds2_temp[i];
-    }*/
     //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
     fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
     //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
