@@ -70,7 +70,9 @@ unsigned long
   prevMillisFAIL = 0,
 
   prevMillisBEACON = 0,
-  fight_green_start = 0;
+  fight_green_start = 0,
+
+  prevMillisTHECOUNT = 0;
 
   bool flash = false,
       strobe = false;
@@ -132,6 +134,7 @@ long  intervalGREEN = 2000,
       flashPause = 50,
       intervalFade = 10,
       intervalFAIL = 3000,
+      intervalTHECOUNT = 1000,                     // 1sec
       intervalBEACON = 90,
       interval_fight_start_green = 500;
 
@@ -485,5 +488,32 @@ void Beacon(){
     
     if(pixelPos >= NUM_LEDS2)
       pixelPos = 0;
+  }
+}
+
+void TheCount(){
+  thisMillis=millis();
+  if(thisMillis - prevMillisTHECOUNT >= intervalTHECOUNT){
+    if(flash == true){                                                                          // strobe interval
+      fill_solid( leds, NUM_LEDS, CRGB::Red);
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
+      }      
+      flash = !flash;
+    }
+    else{                                                                                        // off interval
+      fadeToBlackBy(leds, NUM_LEDS, 50);       // dimm whole strip
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fadeToBlackBy(leds2, NUM_LEDS2, 5);       // dimm whole strip
+      }
+      flash = !flash;
+    }    
+    prevMillisTHECOUNT = thisMillis;
   }
 }
