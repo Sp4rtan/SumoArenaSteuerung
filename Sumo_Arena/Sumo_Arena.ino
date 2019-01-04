@@ -35,8 +35,8 @@ CRGB pixelColor;
 // Pillar Control------------------------------------------------------------------------------
 #define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
 #define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
-#define Motor1    A0       // Motor hoch                       //CHRISTIAN
-#define Motor2    A1       // Motor runter                     //CHRISTIAN
+#define Motor1    A1       // Motor hoch                       //CHRISTIAN
+#define Motor2    A2       // Motor runter                     //CHRISTIAN
                           
 //---------------------------------------------------------------------------------------------
 
@@ -151,6 +151,13 @@ void setup() {
   pinMode(BTN01_PIN, INPUT_PULLUP);
   pinMode(BTN02_PIN, INPUT_PULLUP);
   pinMode(BTN03_PIN, INPUT_PULLUP);
+
+  pinMode(Motor1, OUTPUT);
+  pinMode(Motor2, OUTPUT);
+
+  pinMode(ENDSTOP1, INPUT_PULLUP);
+  pinMode(ENDSTOP2, INPUT_PULLUP);
+  
   Serial.begin(250000);
   //analogReference(EXTERNAL);
   //analogReference(INTERNAL);
@@ -181,7 +188,7 @@ void ColorWipe() {
 }
 
 void loop() {
-  Beacon();
+  //Beacon();
   ReadInput();
   InterpretInput();
 
@@ -209,6 +216,8 @@ void loop() {
 
       if (buttonFlanks[0]) {
         currentMode = FINISH;
+        failure = true;    
+        prevMillisFAIL = millis();
       }
     break;
     case STOPPING:                                               // Fill whole strip with color
@@ -217,9 +226,9 @@ void loop() {
         currentMode = STANDBY;
       }
     break;
-    case FINISH:                                               // Fill whole strip with color
-      Finish();
-      if (!finish) {
+    case FINISH:   // Fill whole strip with color
+      Fail();
+      if (!failure) {
         currentMode = STANDBY;
       }
     break;
@@ -374,62 +383,89 @@ void ReadInput(){
 }
 
 void debounceButton(int buttonNum, int pinNum) {
-  if (buttonNum == 0) {
-    bool currentButtonState = digitalRead(pinNum);
-    
+  bool currentButtonState = digitalRead(pinNum);
+
+
+  
+  buttonFlanks[buttonNum] = false;
+  if (buttonFlanks[buttonNum]) {
     buttonFlanks[buttonNum] = false;
-    if (buttonFlanks[buttonNum]) {
-      buttonFlanks[buttonNum] = false;
-      buttonActivation[buttonNum] = 0;
-    }
-    if (!(currentButtonState)) {
-      if  (buttonStates[buttonNum] && (buttonActivation[buttonNum] == 0)) {
-          buttonActivation[buttonNum] = millis();
-      } 
-      
-      long long waited = millis() - buttonActivation[buttonNum];
-      if (waited > debounceDelay && waited < debounceDelay * 2) {
-        buttonFlanks[buttonNum] = true;
-        buttonActivation[buttonNum] = 0;
-      }
-    } else {
-      buttonActivation[buttonNum] = 0;
-    }
-    buttonStates[buttonNum] = currentButtonState;
+    buttonActivation[buttonNum] = 0;
   }
+  if (!(currentButtonState)) {
+    if  (buttonStates[buttonNum] && (buttonActivation[buttonNum] == 0)) {
+        buttonActivation[buttonNum] = millis();
+    } 
+    
+    long long waited = millis() - buttonActivation[buttonNum];
+    if (waited > debounceDelay && waited < debounceDelay * 2) {
+      buttonFlanks[buttonNum] = true;
+      buttonActivation[buttonNum] = 0;
+    }
+  } else {
+    buttonActivation[buttonNum] = 0;
+  }
+  buttonStates[buttonNum] = currentButtonState;
+
+  if (buttonFlanks[buttonNum]) {
+    Serial.print("ButtonFlank[");
+    Serial.print(buttonNum);
+    Serial.print("]:");
+    Serial.println(buttonStates[buttonNum]);
+  }
+
 }
 
 void InterpretInput(){
+  if (buttonFlanks[1]) {
+    Serial.print("button 1: ");
+    Serial.println(buttonFlanks[1]);
+  } 
+  if (buttonFlanks[2]) {
+    Serial.print("button 2: ");
+    Serial.println(buttonFlanks[2]);
+  }
   if(buttonFlanks[1]){
     goUp = true;
+    goDown = false;
   }
 
   if(buttonFlanks[2]){
     goDown = true;
+    goUp = false;
   }
 }
 
 void moveObstacle() {
   if (buttonFlanks[3]) {
     goUp = false;
+    goDown = false;
   }
   if (buttonFlanks[4]) {
     goDown = false;
+    goUp = false;
   }
 
   if (goUp) {
     digitalWrite(Motor1, HIGH);
     digitalWrite(Motor2, LOW);
+    Beacon();
   } else if (goDown) {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, HIGH);
+    Beacon();
+  } else {
+    digitalWrite(Motor1, LOW);
+    digitalWrite(Motor2, LOW);
   }
 }
 
 void Beacon(){
   thisMillis=millis();
+  fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+  fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
-    fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+    //fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
     /*CRGB leds2_temp[NUM_LEDS2];
     for (int i = 1; i < NUM_LEDS2; i++) {
       leds2_temp[i] = leds2[i-1];
@@ -439,7 +475,7 @@ void Beacon(){
       leds2[i] = leds2_temp[i];
     }*/
     //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
-    fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
+    //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
     //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
     pixelPos++;
 
