@@ -70,7 +70,9 @@ unsigned long
   prevMillisFAIL = 0,
 
   prevMillisBEACON = 0,
-  fight_green_start = 0;
+  fight_green_start = 0,
+
+  prevMillisTHECOUNT = 0;
 
   bool flash = false,
       strobe = false;
@@ -132,6 +134,7 @@ long  intervalGREEN = 2000,
       flashPause = 50,
       intervalFade = 10,
       intervalFAIL = 3000,
+      intervalTHECOUNT = 1000,                     // 1sec
       intervalBEACON = 90,
       interval_fight_start_green = 500;
 
@@ -176,10 +179,6 @@ void setup() {
     }
   }
   Serial.println("finished setup");
-
-//  fill_solid( leds2, NUM_LEDS2, CRGB::Black);
-//  leds2[0] = CRGB::Orange;
-//  leds2[4] = CRGB::Orange;
   
 }
 
@@ -188,9 +187,13 @@ void ColorWipe() {
 }
 
 void loop() {
-  //Beacon();
   ReadInput();
   InterpretInput();
+
+  Serial.print("GoUP: ");
+  Serial.print(goUp);
+  Serial.print("  |  GoDown: ");
+  Serial.println(goDown);
 
   //Aktueller Arena-Modus
   switch(currentMode){
@@ -244,17 +247,28 @@ void ColorFlow(){
   if(thisMillis - prevMillisFlow >= intervalFlow){
     pixelColor = CHSV(fadeColor++, 255, 255);
     fill_solid( leds, NUM_LEDS, pixelColor);
-    fill_solid( leds2, NUM_LEDS2, pixelColor);
+    if(goUp || goDown){
+      Beacon();
+    }
+    else{
+      fill_solid( leds2, NUM_LEDS2, pixelColor);
+    }
     prevMillisFlow = thisMillis;
   }
 }
       
 void CylonDual(){
   fadeToBlackBy(leds, NUM_LEDS, cylonTails);       // dimm whole strip
+  if(goUp || goDown){
+      Beacon();
+  }
+  else{   
+    fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+    fill_solid(&(leds2[beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
+    fill_solid(&(leds2[(NUM_LEDS2-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
+  }
   fill_solid(&(leds[beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
-  fill_solid(&(leds2[beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
   fill_solid(&(leds[(NUM_LEDS-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
-  fill_solid(&(leds2[(NUM_LEDS2-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
 }
 
 void rainbow(){
@@ -264,21 +278,36 @@ void rainbow(){
       prevMillisRainbow = thisMillis;
     }
   fill_rainbow(leds, NUM_LEDS, fadeColor);
-  fill_rainbow(leds2, NUM_LEDS2, fadeColor);
+  if(goUp || goDown){
+      Beacon();
+  }
+  else{
+    fill_rainbow(leds2, NUM_LEDS2, fadeColor);
+  }
 }
 
 void Strobe(){
   thisMillis=millis();
   if(thisMillis - prevMillisSTROBE >= intervalSTROBE){
-    if(strobe == true){                                                                          // strobe interval
-      fill_solid( leds, NUM_LEDS, CRGB::Orange);   
-      fill_solid( leds2, NUM_LEDS2, CRGB::Orange);       
+    if(strobe == true){                
+      fill_solid( leds, NUM_LEDS, CRGB::Orange);
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{   
+        fill_solid( leds2, NUM_LEDS2, CRGB::Orange);      
+      } 
       strobe = !strobe;
       count++;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
-      fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+      }
       strobe = !strobe;
     }    
     prevMillisSTROBE = thisMillis;
@@ -288,14 +317,24 @@ void Strobe(){
 void Flash(){
   thisMillis=millis();
   if(thisMillis - prevMillisFLASH >= intervalFLASH){
-    if(flash == true){                                                                          // strobe interval
+    if(flash == true){
       fill_solid( leds, NUM_LEDS, CRGB::Red);
-      fill_solid( leds2, NUM_LEDS2, CRGB::Red);       
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
+      }      
       flash = !flash;
     }
     else{                                                                                        // off interval
       fill_solid( leds, NUM_LEDS, CRGB::Black);
-      fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Black);
+      }
       flash = !flash;
     }    
     prevMillisFLASH = thisMillis;
@@ -305,11 +344,21 @@ void Flash(){
 void Pulse(){
   if (millis() - fight_green_start < interval_fight_start_green) {
      fill_solid( leds, NUM_LEDS, CRGB::Green);
-     fill_solid( leds2, NUM_LEDS2, CRGB::Green);
+     if(goUp || goDown){
+      Beacon();
+     }
+     else{
+      fill_solid( leds2, NUM_LEDS2, CRGB::Green);
+     }
   } else {
     pixelColor = CHSV( 96, 255, beatsin8(fadeSpeed));
     fill_solid( leds, NUM_LEDS, pixelColor);
-    fill_solid( leds2, NUM_LEDS2, pixelColor);
+    if(goUp || goDown){
+      Beacon();
+    }
+    else{
+      fill_solid( leds2, NUM_LEDS2, pixelColor);
+    }
   }
 }
 void Start(){
@@ -337,7 +386,6 @@ void Start(){
 
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
-    fill_solid( leds2, NUM_LEDS2, CRGB::Red);
     if(thisMillisRED - prevMillisRED >= intervalRED){
       start_stage=2;
       prevMillisRED = thisMillisRED;
@@ -483,5 +531,32 @@ void Beacon(){
     
     if(pixelPos >= NUM_LEDS2)
       pixelPos = 0;
+  }
+}
+
+void TheCount(){
+  thisMillis=millis();
+  if(thisMillis - prevMillisTHECOUNT >= intervalTHECOUNT){
+    if(flash == true){                                                                          // strobe interval
+      fill_solid( leds, NUM_LEDS, CRGB::Red);
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
+      }      
+      flash = !flash;
+    }
+    else{                                                                                        // off interval
+      fadeToBlackBy(leds, NUM_LEDS, 50);       // dimm whole strip
+      if(goUp || goDown){
+        Beacon();
+      }
+      else{
+        fadeToBlackBy(leds2, NUM_LEDS2, 5);       // dimm whole strip
+      }
+      flash = !flash;
+    }    
+    prevMillisTHECOUNT = thisMillis;
   }
 }
