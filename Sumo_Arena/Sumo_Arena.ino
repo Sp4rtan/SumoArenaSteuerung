@@ -386,6 +386,12 @@ void Start(){
 
     thisMillisRED=millis();
     fill_solid( leds, NUM_LEDS, CRGB::Red);
+    if(goUp || goDown){
+      Beacon();
+    }
+    else{
+      fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
+    }      
     if(thisMillisRED - prevMillisRED >= intervalRED){
       start_stage=2;
       prevMillisRED = thisMillisRED;
@@ -497,11 +503,9 @@ void moveObstacle() {
   if (goUp) {
     digitalWrite(Motor1, HIGH);
     digitalWrite(Motor2, LOW);
-    Beacon();
   } else if (goDown) {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, HIGH);
-    Beacon();
   } else {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, LOW);
@@ -510,18 +514,10 @@ void moveObstacle() {
 
 void Beacon(){
   thisMillis=millis();
-  fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+  //fadeToBlackBy(leds2, NUM_LEDS2, 50);       // dimm whole strip
   fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
-    //fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
-    /*CRGB leds2_temp[NUM_LEDS2];
-    for (int i = 1; i < NUM_LEDS2; i++) {
-      leds2_temp[i] = leds2[i-1];
-    }
-    leds2_temp[0] = leds2[NUM_LEDS2-1];
-    for (int i = 0; i < NUM_LEDS2; i++) {
-      leds2[i] = leds2_temp[i];
-    }*/
+    fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
     //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
     //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
     //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
