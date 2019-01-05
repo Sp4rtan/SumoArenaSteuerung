@@ -7,8 +7,8 @@
 
 // Digital IO pin buttons----------------------------------------------------------------------
 #define BTN01_PIN   2       // Button 01 - BUZZER                               
-#define BTN02_PIN   3       // Button 02 - UP                  //CHRISTIAN                      
-#define BTN03_PIN   4       // Button 03 - DOWN                //CHRISTIAN                         
+#define BTN02_PIN   3       // Button 02 - UP                  //ZUKUENFTIG FUER: Countdown (Anzaehlen)                      
+#define BTN03_PIN   4       // Button 03 - DOWN                //ZUKUENFTIG FUER: Up UND Down                        
 //---------------------------------------------------------------------------------------------
 
 // Digital LED Pins----------------------------------------------------------------------------
