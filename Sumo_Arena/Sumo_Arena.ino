@@ -83,9 +83,9 @@ unsigned long
 //---------------------------------------------------------------------------------------------
 
 //BUTTONS---------------------------------------------------------------------------------------------
-bool buttonStates[5];
-bool buttonFlanks[5];
-long buttonActivation[5];
+bool buttonStates[3];
+bool buttonFlanks[3];
+long buttonActivation[3];
 
 bool
   goUp = false,
@@ -161,7 +161,7 @@ void setup() {
   pinMode(ENDSTOP1, INPUT_PULLUP);
   pinMode(ENDSTOP2, INPUT_PULLUP);
   
-  Serial.begin(250000);
+  Serial.begin(9600);
   //analogReference(EXTERNAL);
   //analogReference(INTERNAL);
 
@@ -189,12 +189,6 @@ void ColorWipe() {
 void loop() {
   ReadInput();
   InterpretInput();
-
-  Serial.print("GoUP: ");
-  Serial.print(goUp);
-  Serial.print("  |  GoDown: ");
-  Serial.println(goDown);
-
   //Aktueller Arena-Modus
   switch(currentMode){
     case STANDBY:                                               // Fill whole strip with color
@@ -432,8 +426,6 @@ void ReadInput(){
   debounceButton(0, BTN01_PIN);
   debounceButton(1, BTN02_PIN);
   debounceButton(2, BTN03_PIN);
-  debounceButton(3, ENDSTOP1);
-  debounceButton(4, ENDSTOP2);
 }
 
 void debounceButton(int buttonNum, int pinNum) {
@@ -460,25 +452,10 @@ void debounceButton(int buttonNum, int pinNum) {
     buttonActivation[buttonNum] = 0;
   }
   buttonStates[buttonNum] = currentButtonState;
-
-  if (buttonFlanks[buttonNum]) {
-    Serial.print("ButtonFlank[");
-    Serial.print(buttonNum);
-    Serial.print("]:");
-    Serial.println(buttonStates[buttonNum]);
-  }
-
 }
 
 void InterpretInput(){
-  if (buttonFlanks[1]) {
-    Serial.print("button 1: ");
-    Serial.println(buttonFlanks[1]);
-  } 
-  if (buttonFlanks[2]) {
-    Serial.print("button 2: ");
-    Serial.println(buttonFlanks[2]);
-  }
+  /*
   if(buttonFlanks[1]){
     goUp = true;
     goDown = false;
@@ -487,17 +464,24 @@ void InterpretInput(){
   if(buttonFlanks[2]){
     goDown = true;
     goUp = false;
-  }
+  }*/
 }
 
 void moveObstacle() {
-  if (buttonFlanks[3]) {
+  if (!digitalRead(ENDSTOP1)) {
     goUp = false;
+  }
+  if (!digitalRead(ENDSTOP2)) {
     goDown = false;
   }
-  if (buttonFlanks[4]) {
-    goDown = false;
-    goUp = false;
+
+  if (buttonFlanks[2]) {
+    Serial.println("DRIVE");
+    if (!digitalRead(ENDSTOP1)) {
+      goDown = true;
+    } else if (!digitalRead(ENDSTOP2)) {
+      goUp = true;
+    }
   }
 
   if (goUp) {
@@ -514,10 +498,12 @@ void moveObstacle() {
 
 void Beacon(){
   thisMillis=millis();
+  fadeToBlackBy(leds2, NUM_LEDS2, 255);
   //fadeToBlackBy(leds2, NUM_LEDS2, 50);       // dimm whole strip
-  fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
+  //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
+  fill_solid(leds2, NUM_LEDS2, CHSV( 35, 255, 255));  
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
-    fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
+    //fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
     //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
     //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
     //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
