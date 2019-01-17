@@ -15,6 +15,7 @@
 // Digital LED Pins----------------------------------------------------------------------------
 #define DATA_PIN 5        // Arena
 #define DATA_PIN2 6       // Pillar
+#define STATUS_LED A7       // BUZZER                   // VERIFIZIEREN OB FREI!!!!
 //---------------------------------------------------------------------------------------------
 
 // Reserved for Serial Communication
@@ -35,37 +36,37 @@ CRGB pixelColor;
 
 // Pillar Control------------------------------------------------------------------------------
 #define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
-#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
+#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN
 #define Motor1    A1       // Motor hoch                       //CHRISTIAN
 #define Motor2    A0       // Motor runter                     //CHRISTIAN
 #define MotorEnable 9
-                          
+
 //---------------------------------------------------------------------------------------------
 
 
 //TIMING----------------------------------------------------------------------------------------------
-unsigned long 
+unsigned long
   currentMillis = 0,
   thisMillis = 0,
- 
+
   thisMillisRainbow = 0,
   prevMillisRainbow = 0,
 
   thisMillisRED = 0,
   prevMillisRED = 0,
-  
+
   thisMillisGREEN = 0,
   prevMillisGREEN = 0,
 
   thisMillisBLACK = 0,
   prevMillisBLACK = 0,
-  
+
   thisMillisFLASH = 0,
   prevMillisFLASH = 0,
 
   thisMillisFade = 0,
   prevMillisFade = 0,
-  
+
   prevMillisSTROBE = 0,
 
   thisMillisFAIL = 0,
@@ -111,7 +112,7 @@ enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH, WAIT_MOVEMENT, TIMEOUT
 arenaMode currentMode = STANDBY;
 
 //CYLON DUAL MODE-------------------------------------------------------------------------------------
-byte 
+byte
   cylonSpeed = 30,                                 // animation speed (higher = faster)                                 /* CHANGEABLE */
   cylonTails = 7,                                 // lenght of tails                                                    /* CHANGEABLE */
   cylonBarSizes = 7;                               // lenght of bars                                                    /* CHANGEABLE */
@@ -120,8 +121,9 @@ byte
 bool COUNTDOWN = false,
      failure = false,
      startSequence = true,
-     finish = false;
-     
+     finish = false,
+     startSequence = true;
+
 int brightness = 0,
     count = 0;
 
@@ -151,7 +153,7 @@ void setup() {
   
   FastLED.addLeds<WS2812B, DATA_PIN, RGBORDER>(leds, NUM_LEDS);
   FastLED.addLeds<WS2812B, DATA_PIN2, RGBORDER>(leds2, NUM_LEDS2);
-  
+
   set_max_power_in_volts_and_milliamps(5, 19000);                        //(U in v, I in mA)                             /* CHANGEABLE */
 
   pinMode(BTN_BUZZER, INPUT_PULLUP);
@@ -164,14 +166,17 @@ void setup() {
 
   pinMode(ENDSTOP1, INPUT_PULLUP);
   pinMode(ENDSTOP2, INPUT_PULLUP);
-  
+
   Serial.begin(9600);
   //analogReference(EXTERNAL);
   //analogReference(INTERNAL);
 
   //show_at_max_brightness_for_power();                                   //FastLED.show();
   Serial.println("start");
-  while (brightness < 255){
+  while(digitalRead(BTN_ONOFF)){
+    delay(10);
+  }
+  while (startSequence){
     thisMillisFade=millis();
     if(thisMillisFade - prevMillisFade >= intervalFade){
         brightness++;
@@ -180,17 +185,32 @@ void setup() {
         FastLED.setBrightness(brightness);
         show_at_max_brightness_for_power();
         prevMillisFade = thisMillisFade;
+        if(brightness >= 255){
+          startSequence = false;
+          digitalWrite(STATUS_LED, HIGH);   // BUZZER LED ein
+        }
     }
   }
   Serial.println("finished setup");
-  
 }
 
 void ColorWipe() {
-  
+
 }
 
 void loop() {
+  if(digitalRead(BTN_ONOFF) == HIGH){        //Kontrollpultschalter ist ausgeschaltet
+    //Poller runterfahren
+      //(if poller unten){
+        // LED Strip 01 ausschalten
+        // LED Strip 02 ausschalten
+        //show_at_max_brightness_for_power;
+        //digitalWrite(STATUS_LED, LOW);      // BUZZER LED aus
+        //delay(100);
+        //resetFunc();  //call reset
+      //}
+  }
+
   ReadInput();
   //Aktueller Arena-Modus
   switch(currentMode){
@@ -208,7 +228,7 @@ void loop() {
       if (failure) {
         //TODO:Send Notification
         currentMode = STOPPING;
-      } else if (!COUNTDOWN) { 
+      } else if (!COUNTDOWN) {
         //TODO:Send Notification
         currentMode = FIGHT;
         fight_green_start = millis();
@@ -219,7 +239,7 @@ void loop() {
 
       if (buttonFlanks[0]) {
         currentMode = FINISH;
-        failure = true;    
+        failure = true;
         prevMillisFAIL = millis();
       }
       if (buttonFlanks[1]) {
@@ -257,7 +277,7 @@ void loop() {
   moveObstacle();
 
   FastLED.setBrightness(brightness);
-  show_at_max_brightness_for_power();   
+  show_at_max_brightness_for_power();
 }
 void ColorFlow(){
   thisMillis=millis();
@@ -273,13 +293,13 @@ void ColorFlow(){
     prevMillisFlow = thisMillis;
   }
 }
-      
+
 void CylonDual(){
   fadeToBlackBy(leds, NUM_LEDS, cylonTails);       // dimm whole strip
   if(goUp || goDown){
       Beacon();
   }
-  else{   
+  else{
     fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
     fill_solid(&(leds2[beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
     fill_solid(&(leds2[(NUM_LEDS2-cylonBarSizes)-beatsin8(cylonSpeed, 0, (NUM_LEDS2/2)+1-cylonBarSizes)]), cylonBarSizes, CRGB::Green);
@@ -306,14 +326,14 @@ void rainbow(){
 void Strobe(){
   thisMillis=millis();
   if(thisMillis - prevMillisSTROBE >= intervalSTROBE){
-    if(strobe == true){                
+    if(strobe == true){
       fill_solid( leds, NUM_LEDS, CRGB::Orange);
       if(goUp || goDown){
         Beacon();
       }
-      else{   
-        fill_solid( leds2, NUM_LEDS2, CRGB::Orange);      
-      } 
+      else{
+        fill_solid( leds2, NUM_LEDS2, CRGB::Orange);
+      }
       strobe = !strobe;
       count++;
     }
@@ -326,7 +346,7 @@ void Strobe(){
         fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       }
       strobe = !strobe;
-    }    
+    }
     prevMillisSTROBE = thisMillis;
   }
 }
@@ -340,8 +360,8 @@ void Flash(){
         Beacon();
       }
       else{
-        fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
-      }      
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red);
+      }
       flash = !flash;
     }
     else{                                                                                        // off interval
@@ -353,7 +373,7 @@ void Flash(){
         fill_solid( leds2, NUM_LEDS2, CRGB::Black);
       }
       flash = !flash;
-    }    
+    }
     prevMillisFLASH = thisMillis;
   }
 }
@@ -387,7 +407,7 @@ void Start(){
    */
 
   //Dont fail afer stage 2, thats the green stage
-  if (COUNTDOWN && buttonFlanks[0]) {  
+  if (COUNTDOWN && buttonFlanks[0]) {
     Serial.print("FAIL!");
     COUNTDOWN = false;
     start_stage = 1;
@@ -407,8 +427,8 @@ void Start(){
       Beacon();
     }
     else{
-      fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
-    }      
+      fill_solid( leds2, NUM_LEDS2, CRGB::Red);
+    }
     if(thisMillisRED - prevMillisRED >= intervalRED){
       start_stage=2;
       prevMillisRED = thisMillisRED;
@@ -462,8 +482,8 @@ void debounceButton(int buttonNum, int pinNum) {
   if (!(currentButtonState)) {
     if  (buttonStates[buttonNum] && (buttonActivation[buttonNum] == 0)) {
         buttonActivation[buttonNum] = millis();
-    } 
-    
+    }
+
     long long waited = millis() - buttonActivation[buttonNum];
     if (waited > debounceDelay && waited < debounceDelay * 2) {
       buttonFlanks[buttonNum] = true;
@@ -515,12 +535,12 @@ void moveObstacle() {
 void Beacon(){
   thisMillis=millis();
   fadeToBlackBy(leds2, NUM_LEDS2, 255);
-  fill_solid(leds2, NUM_LEDS2, CHSV( 35, 255, 255));  
+  fill_solid(leds2, NUM_LEDS2, CHSV( 35, 255, 255));
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
     pixelPos++;
 
     prevMillisBEACON = thisMillis;
-    
+
     if(pixelPos >= NUM_LEDS2)
       pixelPos = 0;
   }
@@ -535,8 +555,8 @@ void TheCount(){
         Beacon();
       }
       else{
-        fill_solid( leds2, NUM_LEDS2, CRGB::Red); 
-      }      
+        fill_solid( leds2, NUM_LEDS2, CRGB::Red);
+      }
       flash = !flash;
     }
     else{                                                                                        // off interval
@@ -548,7 +568,7 @@ void TheCount(){
         fadeToBlackBy(leds2, NUM_LEDS2, 5);       // dimm whole strip
       }
       flash = !flash;
-    }    
+    }
     prevMillisTHECOUNT = thisMillis;
   }
 }
