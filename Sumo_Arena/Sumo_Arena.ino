@@ -228,9 +228,7 @@ void setup() {
   Serial.println("finished setup");
 }
 
-void ColorWipe() {
-
-}
+void(* resetFunc) (void) = 0;                 //declare reset function @ address 0
 
 void loop() {
   if(digitalRead(BTN_ONOFF) == HIGH){        //Kontrollpultschalter ist ausgeschaltet
