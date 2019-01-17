@@ -6,9 +6,10 @@
 #define RGBORDER RGB
 
 // Digital IO pin buttons----------------------------------------------------------------------
-#define BTN01_PIN   2       // Button 01 - BUZZER                               
-#define BTN02_PIN   3       // Button 02 - UP                  //ZUKUENFTIG FUER: Countdown (Anzaehlen)                      
-#define BTN03_PIN   4       // Button 03 - DOWN                //ZUKUENFTIG FUER: Up UND Down                        
+#define BTN_BUZZER 2
+#define BTN_COUNTDOWN 3
+#define BTN_POLLER 4
+#define BTN_ONOFF A5
 //---------------------------------------------------------------------------------------------
 
 // Digital LED Pins----------------------------------------------------------------------------
@@ -36,7 +37,8 @@ CRGB pixelColor;
 #define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
 #define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
 #define Motor1    A1       // Motor hoch                       //CHRISTIAN
-#define Motor2    A2       // Motor runter                     //CHRISTIAN
+#define Motor2    A0       // Motor runter                     //CHRISTIAN
+#define MotorEnable 9
                           
 //---------------------------------------------------------------------------------------------
 
@@ -72,6 +74,8 @@ unsigned long
   prevMillisBEACON = 0,
   fight_green_start = 0,
 
+  prevMillisWaitMovement = 0,
+
   prevMillisTHECOUNT = 0;
 
   bool flash = false,
@@ -98,13 +102,12 @@ byte
 //FUNCTIONS-----------------------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------------------------
 void ReadInput();
-void InterpretInput();
 void moveObstacle();
 
 //--------------------------------------------------------------------------------------------------------------------------------
 
 //Arena Modus
-enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH};
+enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH, WAIT_MOVEMENT, TIMEOUT};
 arenaMode currentMode = STANDBY;
 
 //CYLON DUAL MODE-------------------------------------------------------------------------------------
@@ -151,9 +154,10 @@ void setup() {
   
   set_max_power_in_volts_and_milliamps(5, 19000);                        //(U in v, I in mA)                             /* CHANGEABLE */
 
-  pinMode(BTN01_PIN, INPUT_PULLUP);
-  pinMode(BTN02_PIN, INPUT_PULLUP);
-  pinMode(BTN03_PIN, INPUT_PULLUP);
+  pinMode(BTN_BUZZER, INPUT_PULLUP);
+  pinMode(BTN_COUNTDOWN, INPUT_PULLUP);
+  pinMode(BTN_POLLER, INPUT_PULLUP);
+  pinMode(BTN_ONOFF, INPUT_PULLUP);
 
   pinMode(Motor1, OUTPUT);
   pinMode(Motor2, OUTPUT);
@@ -188,13 +192,13 @@ void ColorWipe() {
 
 void loop() {
   ReadInput();
-  InterpretInput();
   //Aktueller Arena-Modus
   switch(currentMode){
     case STANDBY:                                               // Fill whole strip with color
       ColorFlow();
       //CylonDual();
       if (buttonFlanks[0]) {
+        //TODO:Send Notification
         currentMode = START;
       }
     break;
@@ -202,8 +206,10 @@ void loop() {
       Start();
 
       if (failure) {
+        //TODO:Send Notification
         currentMode = STOPPING;
       } else if (!COUNTDOWN) { 
+        //TODO:Send Notification
         currentMode = FIGHT;
         fight_green_start = millis();
       }
@@ -216,6 +222,23 @@ void loop() {
         failure = true;    
         prevMillisFAIL = millis();
       }
+      if (buttonFlanks[1]) {
+        currentMode = WAIT_MOVEMENT;
+        //TODO:Send Notification
+      }
+    break;
+    case WAIT_MOVEMENT:
+      if (millis() - prevMillisWaitMovement > 10000) {
+        currentMode = TIMEOUT;
+      }
+
+      if (buttonFlanks[1]) {
+        //TODO:Send Notification
+        currentMode = FIGHT;
+      }
+    break;
+    case TIMEOUT:
+      //TODO:Send Notification
     break;
     case STOPPING:                                               // Fill whole strip with color
       Fail();
@@ -423,16 +446,14 @@ void Finish(){
 }
 
 void ReadInput(){
-  debounceButton(0, BTN01_PIN);
-  debounceButton(1, BTN02_PIN);
-  debounceButton(2, BTN03_PIN);
+  debounceButton(0, BTN_BUZZER);
+  debounceButton(1, BTN_COUNTDOWN);
+  debounceButton(2, BTN_POLLER);
 }
 
 void debounceButton(int buttonNum, int pinNum) {
   bool currentButtonState = digitalRead(pinNum);
 
-
-  
   buttonFlanks[buttonNum] = false;
   if (buttonFlanks[buttonNum]) {
     buttonFlanks[buttonNum] = false;
@@ -454,19 +475,6 @@ void debounceButton(int buttonNum, int pinNum) {
   buttonStates[buttonNum] = currentButtonState;
 }
 
-void InterpretInput(){
-  /*
-  if(buttonFlanks[1]){
-    goUp = true;
-    goDown = false;
-  }
-
-  if(buttonFlanks[2]){
-    goDown = true;
-    goUp = false;
-  }*/
-}
-
 void moveObstacle() {
   if (!digitalRead(ENDSTOP1)) {
     goUp = false;
@@ -481,32 +489,34 @@ void moveObstacle() {
       goDown = true;
     } else if (!digitalRead(ENDSTOP2)) {
       goUp = true;
+    } else {
+      goDown = true;
     }
   }
 
   if (goUp) {
     digitalWrite(Motor1, HIGH);
     digitalWrite(Motor2, LOW);
+
+    analogWrite(MotorEnable, 150);
   } else if (goDown) {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, HIGH);
+
+    analogWrite(MotorEnable, 150);
   } else {
     digitalWrite(Motor1, LOW);
     digitalWrite(Motor2, LOW);
+
+    analogWrite(MotorEnable, 0);
   }
 }
 
 void Beacon(){
   thisMillis=millis();
   fadeToBlackBy(leds2, NUM_LEDS2, 255);
-  //fadeToBlackBy(leds2, NUM_LEDS2, 50);       // dimm whole strip
-  //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
   fill_solid(leds2, NUM_LEDS2, CHSV( 35, 255, 255));  
   if(thisMillis - prevMillisBEACON >= intervalBEACON){
-    //fadeToBlackBy(leds2, NUM_LEDS2, 150);       // dimm whole strip
-    //fill_solid( leds2, NUM_LEDS2, CRGB::Black);
-    //fill_solid(&(leds2[pixelPos]), 1, CHSV( 35, 255, 255));  
-    //fill_solid(&(leds2[pixelPos]), 1, CRGB::Orange);*/
     pixelPos++;
 
     prevMillisBEACON = thisMillis;
