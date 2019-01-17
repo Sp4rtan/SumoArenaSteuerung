@@ -6,10 +6,11 @@
 #define RGBORDER RGB
 
 // Digital IO pin buttons----------------------------------------------------------------------
-#define BTN_BUZZER 2
-#define BTN_COUNTDOWN 3
+#define BTN_BUZZER 8
+#define BTN_COUNTDOWN 7
 #define BTN_POLLER 4
 #define BTN_ONOFF A5
+
 //---------------------------------------------------------------------------------------------
 
 // Digital LED Pins----------------------------------------------------------------------------
@@ -27,6 +28,10 @@
 #define NUM_LEDS  300        // Pixel Count Arena
 #define NUM_LEDS2 8         // Pixel Count Pillar
 
+
+//Self Reset
+
+#define PIN_SELFRESET 10
 //NEO PIXELS-----------------------------------------------------------------------------------
 CRGB leds[NUM_LEDS];
 CRGB leds2[NUM_LEDS2];
@@ -34,8 +39,8 @@ CRGB pixelColor;
 //---------------------------------------------------------------------------------------------
 
 // Pillar Control------------------------------------------------------------------------------
-#define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
-#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN     
+#define ENDSTOP1   2       // Enstop Oben                      //CHRISTIAN
+#define ENDSTOP2   3       // Endstop Unten                    //CHRISTIAN     
 #define Motor1    A1       // Motor hoch                       //CHRISTIAN
 #define Motor2    A0       // Motor runter                     //CHRISTIAN
 #define MotorEnable 9
@@ -93,7 +98,7 @@ long buttonActivation[3];
 
 bool
   goUp = false,
-  goDown = false;
+  goDown = true;
 
 byte
   debounceDelay = 20;                             // time to wait for button change
@@ -143,8 +148,35 @@ long  intervalGREEN = 2000,
 
 byte fadeColor = 1;
 
+void endstop1ISR() {
+  if (!digitalRead(ENDSTOP1)) {
+    goUp = false;
+    digitalWrite(Motor1, LOW);
+    digitalWrite(Motor2, LOW);
+    analogWrite(MotorEnable, 0);
+  } else {
+    Serial.println("Nicht relevant?");
+  }
+}
+
+void endstop2ISR() {
+  if (!digitalRead(ENDSTOP2)) {
+    goDown = false;
+    digitalWrite(Motor1, LOW);
+    digitalWrite(Motor2, LOW);
+    analogWrite(MotorEnable, 0);
+    Serial.println("Endstop 2");
+  } else {
+    Serial.println("Nicht relevant2?");
+  }
+}
 
 void setup() {
+  digitalWrite(PIN_SELFRESET, HIGH);
+
+  attachInterrupt(digitalPinToInterrupt(ENDSTOP1), endstop1ISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENDSTOP2), endstop2ISR, FALLING);
+  
   for (int i = 0; i < 5; i++) {
     buttonActivation[i] = 0;
   }
@@ -164,6 +196,8 @@ void setup() {
 
   pinMode(ENDSTOP1, INPUT_PULLUP);
   pinMode(ENDSTOP2, INPUT_PULLUP);
+
+  pinMode(PIN_SELFRESET, OUTPUT);
   
   Serial.begin(9600);
   //analogReference(EXTERNAL);
@@ -192,6 +226,30 @@ void ColorWipe() {
 
 void loop() {
   ReadInput();
+  if (!digitalRead(BTN_ONOFF)) {
+    Serial.println("BTN OFF!");
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(leds2, NUM_LEDS2, CRGB::Black);
+    FastLED.setBrightness(0);
+    show_at_max_brightness_for_power();  
+    
+    if (digitalRead(ENDSTOP2)) {
+      digitalWrite(Motor1, LOW);
+      digitalWrite(Motor2, HIGH);
+      Serial.println("moving down");
+      analogWrite(MotorEnable, 150);
+    } else {
+      digitalWrite(Motor1, LOW);
+      digitalWrite(Motor2, LOW);
+      Serial.println("isDown");
+      analogWrite(MotorEnable, 0);
+    }
+    while(!digitalRead(BTN_ONOFF)) {
+      delay(10);
+    }
+
+    digitalWrite(PIN_SELFRESET, LOW);
+  }
   //Aktueller Arena-Modus
   switch(currentMode){
     case STANDBY:                                               // Fill whole strip with color
@@ -223,6 +281,8 @@ void loop() {
         prevMillisFAIL = millis();
       }
       if (buttonFlanks[1]) {
+        Serial.println("The Count");
+        prevMillisWaitMovement = millis();
         currentMode = WAIT_MOVEMENT;
         //TODO:Send Notification
       }
@@ -231,6 +291,7 @@ void loop() {
       if (millis() - prevMillisWaitMovement > 10000) {
         currentMode = TIMEOUT;
       }
+      TheCount();
 
       if (buttonFlanks[1]) {
         //TODO:Send Notification
@@ -238,7 +299,9 @@ void loop() {
       }
     break;
     case TIMEOUT:
+      Serial.println("TIMEOUT");
       //TODO:Send Notification
+      currentMode = STANDBY;
     break;
     case STOPPING:                                               // Fill whole strip with color
       Fail();
