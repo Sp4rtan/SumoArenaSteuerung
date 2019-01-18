@@ -2,6 +2,7 @@
 #include <power_mgt.h>
 #include <pixeltypes.h>
 #include <limits.h>
+#include <avr/wdt.h>
 
 #define RGBORDER RGB
 
@@ -16,7 +17,7 @@
 // Digital LED Pins----------------------------------------------------------------------------
 #define DATA_PIN 5        // Arena
 #define DATA_PIN2 6       // Pillar
-#define STATUS_LED A7       // BUZZER                   // VERIFIZIEREN OB FREI!!!!
+#define STATUS_LED A4       // BUZZER                   // VERIFIZIEREN OB FREI!!!!
 //---------------------------------------------------------------------------------------------
 
 // Reserved for Serial Communication
@@ -30,9 +31,6 @@
 #define NUM_LEDS2 8         // Pixel Count Pillar
 
 
-//Self Reset
-
-#define PIN_SELFRESET 10
 //NEO PIXELS-----------------------------------------------------------------------------------
 CRGB leds[NUM_LEDS];
 CRGB leds2[NUM_LEDS2];
@@ -40,8 +38,8 @@ CRGB pixelColor;
 //---------------------------------------------------------------------------------------------
 
 // Pillar Control------------------------------------------------------------------------------
-#define ENDSTOP1   7       // Enstop Oben                      //CHRISTIAN
-#define ENDSTOP2   8       // Endstop Unten                    //CHRISTIAN
+#define ENDSTOP1   2       // Enstop Oben                      //CHRISTIAN
+#define ENDSTOP2   3         // Endstop Unten                    //CHRISTIAN
 #define Motor1    A1       // Motor hoch                       //CHRISTIAN
 #define Motor2    A0       // Motor runter                     //CHRISTIAN
 #define MotorEnable 9
@@ -113,8 +111,8 @@ void moveObstacle();
 //--------------------------------------------------------------------------------------------------------------------------------
 
 //Arena Modus
-enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH, WAIT_MOVEMENT, TIMEOUT};
-arenaMode currentMode = STANDBY;
+enum arenaMode {STANDBY=1,START, FIGHT, STOPPING, FINISH, WAIT_MOVEMENT, TIMEOUT, START_SEQUENCE};
+arenaMode currentMode = START_SEQUENCE;
 
 //CYLON DUAL MODE-------------------------------------------------------------------------------------
 byte
@@ -126,8 +124,7 @@ byte
 bool COUNTDOWN = false,
      failure = false,
      startSequence = true,
-     finish = false,
-     startSequence = true;
+     finish = false;
 
 int brightness = 0,
     count = 0;
@@ -174,8 +171,6 @@ void endstop2ISR() {
 }
 
 void setup() {
-  digitalWrite(PIN_SELFRESET, HIGH);
-
   attachInterrupt(digitalPinToInterrupt(ENDSTOP1), endstop1ISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(ENDSTOP2), endstop2ISR, FALLING);
 
@@ -199,7 +194,7 @@ void setup() {
   pinMode(ENDSTOP1, INPUT_PULLUP);
   pinMode(ENDSTOP2, INPUT_PULLUP);
 
-  pinMode(PIN_SELFRESET, OUTPUT);
+  pinMode(STATUS_LED, OUTPUT);
 
   Serial.begin(9600);
   //analogReference(EXTERNAL);
@@ -207,28 +202,25 @@ void setup() {
 
   //show_at_max_brightness_for_power();                                   //FastLED.show();
   Serial.println("start");
-  while(digitalRead(BTN_ONOFF)){
-    delay(10);
-  }
-  while (startSequence){
-    thisMillisFade=millis();
-    if(thisMillisFade - prevMillisFade >= intervalFade){
-        brightness++;
-        fill_solid( leds, NUM_LEDS, CRGB::Red);
-        fill_solid( leds2, NUM_LEDS2, CRGB::Red);
-        FastLED.setBrightness(brightness);
-        show_at_max_brightness_for_power();
-        prevMillisFade = thisMillisFade;
-        if(brightness >= 255){
-          startSequence = false;
-          digitalWrite(STATUS_LED, HIGH);   // BUZZER LED ein
-        }
-    }
-  }
   Serial.println("finished setup");
 }
 
-void(* resetFunc) (void) = 0;                 //declare reset function @ address 0
+void StartSequence() {
+  thisMillisFade=millis();
+  if(thisMillisFade - prevMillisFade >= intervalFade){
+      brightness++;
+      fill_solid( leds, NUM_LEDS, CRGB::Red);
+      fill_solid( leds2, NUM_LEDS2, CRGB::Red);
+      FastLED.setBrightness(brightness);
+      show_at_max_brightness_for_power();
+      prevMillisFade = thisMillisFade;
+      if(brightness >= 255){
+        startSequence = false;
+        digitalWrite(STATUS_LED, HIGH);   // BUZZER LED ein
+      }
+  }
+
+}
 
 void loop() {
   if(digitalRead(BTN_ONOFF) == HIGH){        //Kontrollpultschalter ist ausgeschaltet
@@ -242,9 +234,7 @@ void loop() {
         //resetFunc();  //call reset
       //}
   }
-
-  ReadInput();
-  if (!digitalRead(BTN_ONOFF)) {
+  if (digitalRead(BTN_ONOFF)) {
     Serial.println("BTN OFF!");
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     fill_solid(leds2, NUM_LEDS2, CRGB::Black);
@@ -252,24 +242,38 @@ void loop() {
     show_at_max_brightness_for_power();
 
     if (digitalRead(ENDSTOP2)) {
-      digitalWrite(Motor1, LOW);
-      digitalWrite(Motor2, HIGH);
-      Serial.println("moving down");
-      analogWrite(MotorEnable, 150);
-    } else {
-      digitalWrite(Motor1, LOW);
-      digitalWrite(Motor2, LOW);
-      Serial.println("isDown");
-      analogWrite(MotorEnable, 0);
+      goDown = true;
     }
-    while(!digitalRead(BTN_ONOFF)) {
-      delay(10);
+    while(digitalRead(BTN_ONOFF)) {
+      if (goDown) {
+        digitalWrite(Motor1, LOW);
+        digitalWrite(Motor2, HIGH);
+        analogWrite(MotorEnable, 150);
+        Serial.println("go down");
+      } else {
+        digitalWrite(Motor1, LOW);
+        digitalWrite(Motor2, LOW);
+        analogWrite(MotorEnable, 0);
+        Serial.println("stop");
+      }
     }
-
-    digitalWrite(PIN_SELFRESET, LOW);
+    Serial.println("finished waiting for Lever");
+    delay(100);
+    wdt_enable(WDTO_15MS);
+    for(;;){}
   }
+  
+
+  ReadInput();
+  
   //Aktueller Arena-Modus
   switch(currentMode){
+    case START_SEQUENCE:
+      StartSequence();
+      if (!startSequence) {
+        currentMode = STANDBY;
+      }
+    break;
     case STANDBY:                                               // Fill whole strip with color
       ColorFlow();
       //CylonDual();
