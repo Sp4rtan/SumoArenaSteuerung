@@ -135,7 +135,7 @@ long  intervalGREEN = 2000,
       intervalBLACK = 2000,
       intervalRainbow = 5,
       intervalSTROBE = 500,
-      intervalFLASH = 50,
+      intervalFLASH = 100,
       intervalFlow = 200,
       prevMillisFlow = 0,
       flashPause = 50,
@@ -173,7 +173,7 @@ void endstop2ISR() {
 void setup() {
   attachInterrupt(digitalPinToInterrupt(ENDSTOP1), endstop1ISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(ENDSTOP2), endstop2ISR, FALLING);
-
+  digitalWrite(STATUS_LED, HIGH);      // BUZZER LED aus
   for (int i = 0; i < 5; i++) {
     buttonActivation[i] = 0;
   }
@@ -223,17 +223,6 @@ void StartSequence() {
 }
 
 void loop() {
-  if(digitalRead(BTN_ONOFF) == HIGH){        //Kontrollpultschalter ist ausgeschaltet
-    //Poller runterfahren
-      //(if poller unten){
-        // LED Strip 01 ausschalten
-        // LED Strip 02 ausschalten
-        //show_at_max_brightness_for_power;
-        //digitalWrite(STATUS_LED, LOW);      // BUZZER LED aus
-        //delay(100);
-        //resetFunc();  //call reset
-      //}
-  }
   if (digitalRead(BTN_ONOFF)) {
     Serial.println("BTN OFF!");
     fill_solid(leds, NUM_LEDS, CRGB::Black);
@@ -241,6 +230,7 @@ void loop() {
     FastLED.setBrightness(0);
     show_at_max_brightness_for_power();
 
+    digitalWrite(STATUS_LED, LOW);      // BUZZER LED aus
     if (digitalRead(ENDSTOP2)) {
       goDown = true;
     }
@@ -262,10 +252,10 @@ void loop() {
     wdt_enable(WDTO_15MS);
     for(;;){}
   }
-  
+
 
   ReadInput();
-  
+
   //Aktueller Arena-Modus
   switch(currentMode){
     case START_SEQUENCE:
